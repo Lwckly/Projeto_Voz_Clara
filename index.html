@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>VozClara — Speech Transcription</title>
+<meta name="description" content="VozClara speech transcription interface">
+{% endblock %}
+
+{% block body %}
+<div class="app-shell">
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="VozClara home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M8.5 5.5a3.5 3.5 0 0 1 7 0v5a3.5 3.5 0 0 1-7 0v-5Z" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M5.5 10.5a6.5 6.5 0 0 0 13 0M12 17v3.5M8.5 20.5h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span>
+        <strong>VozClara</strong>
+        <small>Speech Intelligence</small>
+      </span>
+    </a>
+
+    <div class="topbar-actions">
+      <span class="status-pill"><span class="status-dot"></span> Local workspace</span>
+      <button id="darkModeToggle" class="icon-button" type="button" title="Toggle theme" aria-label="Toggle theme">☼</button>
+    </div>
+  </header>
+
+  <main class="app">
+    <section class="hero">
+      <div class="eyebrow"><span></span> AI-ASSISTED TRANSCRIPTION</div>
+      <h1>Turn spoken words into <em>clear text.</em></h1>
+      <p>Capture audio, process it through the transcription pipeline, and review the resulting text in one focused workspace.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="record-card glass-card">
+        <div class="card-topline">
+          <div>
+            <span class="section-label">RECORDING</span>
+            <h2 id="recordTitle">Ready when you are</h2>
+          </div>
+          <div class="live-badge" id="liveBadge"><span></span> READY</div>
+        </div>
+
+        <div class="orb-wrap">
+          <div class="orb-ring ring-a"></div>
+          <div class="orb-ring ring-b"></div>
+          <div class="orb-ring ring-c"></div>
+          <button id="recordButton" class="record-btn" aria-pressed="false" aria-label="Start recording" type="button">
+            <span class="record-glow"></span>
+            <span class="record-icon" id="iconPlay" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M9 6.2v11.6c0 .7.8 1.1 1.4.7l8.5-5.8a.85.85 0 0 0 0-1.4l-8.5-5.8C9.8 5.1 9 5.5 9 6.2Z"/></svg>
+            </span>
+            <span class="record-icon hidden" id="iconStop" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
+            </span>
+          </button>
+        </div>
+
+        <div class="timer" id="timer">00:00</div>
+        <div id="status" class="status-text" aria-live="polite">Click the button to start recording</div>
+
+        <div class="waveform" id="waveform" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+
+        <div class="process-track" aria-hidden="true">
+          <div class="process-step active"><span>01</span> Capture</div>
+          <div class="process-line"></div>
+          <div class="process-step"><span>02</span> Convert</div>
+          <div class="process-line"></div>
+          <div class="process-step"><span>03</span> Transcribe</div>
+        </div>
+      </div>
+
+      <aside class="transcript-card glass-card" aria-label="Transcription output">
+        <div class="card-topline transcript-topline">
+          <div>
+            <span class="section-label">OUTPUT</span>
+            <h2>Transcript</h2>
+          </div>
+          <span id="outputState" class="output-state">No transcript yet</span>
+        </div>
+
+        <div id="result" class="result-content empty-state">
+          <div class="empty-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M7 4.5h7l3 3V19.5H7z" stroke="currentColor" stroke-width="1.5"/><path d="M14 4.5v3h3M9.5 11h5M9.5 14h5M9.5 17h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <strong>Your transcript will appear here</strong>
+          <span>Record a short sample and the processed text will be displayed in this panel.</span>
+        </div>
+
+        <div class="transcript-footer">
+          <div class="meta-chip"><span class="meta-dot"></span><span id="wordCount">0</span> words</div>
+          <div class="export-actions">
+            <button id="downloadPdf" class="export-btn" type="button">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M6 3.5h8l4 4v13H6z" stroke="currentColor" stroke-width="1.5"/><path d="M14 3.5v4h4M8.5 15h2.2a1.7 1.7 0 1 0 0-3.4H8.5V17M13.5 11.6v5.4M13.5 14.8h1.8a1.6 1.6 0 0 0 0-3.2h-1.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              PDF
+            </button>
+            <button id="downloadDoc" class="export-btn" type="button">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M6 3.5h8l4 4v13H6z" stroke="currentColor" stroke-width="1.5"/><path d="M14 3.5v4h4M8.7 11.7h6.6M8.7 14.5h6.6M8.7 17.3h4.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              DOC
+            </button>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="feature-row">
+      <div class="feature-card">
+        <span class="feature-icon">01</span>
+        <div><strong>Browser capture</strong><small>Microphone audio captured directly in the interface.</small></div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">02</span>
+        <div><strong>Audio preprocessing</strong><small>Converted to mono 16 kHz PCM WAV before upload.</small></div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">03</span>
+        <div><strong>Whisper pipeline</strong><small>Server-side speech recognition returns editable text.</small></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>VozClara</span>
+    <span class="footer-separator">•</span>
+    <span>Speech-to-text prototype</span>
+  </footer>
+</div>
+
+<script>
+/* -------------------------
+   WAV conversion & upload
+   - Convert recorded Blob (webm/opus) -> WAV PCM16 mono 16kHz
+   - Upload WAV as "file" in FormData to /upload
+   ------------------------- */
+
+const recordBtn = document.getElementById('recordButton');
+const iconPlay = document.getElementById('iconPlay');
+const iconStop = document.getElementById('iconStop');
+const statusEl = document.getElementById('status');
+const resultEl = document.getElementById('result');
+const timerEl = document.getElementById('timer');
+const recordTitle = document.getElementById('recordTitle');
+const liveBadge = document.getElementById('liveBadge');
+const waveform = document.getElementById('waveform');
+const outputState = document.getElementById('outputState');
+const wordCount = document.getElementById('wordCount');
+
+let mediaRecorder, mediaStream, audioChunks = [], recording = false;
+let timerInterval = null;
+let recordingStartedAt = null;
+
+function formatTime(totalSeconds) {
+  const mins = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+  const secs = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
+  return `${mins}:${secs}`;
+}
+
+function startTimer() {
+  recordingStartedAt = Date.now();
+  timerEl.textContent = '00:00';
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerEl.textContent = formatTime((Date.now() - recordingStartedAt) / 1000);
+  }, 250);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+function setRecordingUI(isRecording) {
+  recording = isRecording;
+  recordBtn.classList.toggle('recording', isRecording);
+  recordBtn.setAttribute('aria-pressed', String(isRecording));
+  iconPlay.classList.toggle('hidden', isRecording);
+  iconStop.classList.toggle('hidden', !isRecording);
+  waveform.classList.toggle('active', isRecording);
+  liveBadge.classList.toggle('recording', isRecording);
+  liveBadge.innerHTML = isRecording ? '<span></span> RECORDING' : '<span></span> READY';
+
+  if (isRecording) {
+    recordTitle.textContent = 'Listening…';
+    statusEl.textContent = 'Recording in progress — click again to stop';
+    startTimer();
+  } else {
+    stopTimer();
+    recordTitle.textContent = 'Processing audio';
+    statusEl.textContent = 'Preparing audio for transcription…';
+  }
+}
+
+function setProcessingState(message) {
+  recordTitle.textContent = 'Processing audio';
+  statusEl.textContent = message;
+  liveBadge.classList.add('processing');
+  liveBadge.innerHTML = '<span></span> PROCESSING';
+}
+
+function clearProcessingState() {
+  liveBadge.classList.remove('processing');
+}
+
+function updateWordCount(text) {
+  const count = text.trim() ? text.trim().split(/\s+/).length : 0;
+  wordCount.textContent = count.toString();
+}
+
+function showTranscript(text) {
+  const cleanText = (text || '').trim();
+  if (!cleanText) {
+    resultEl.className = 'result-content empty-state';
+    resultEl.innerHTML = '<div class="empty-icon">—</div><strong>No text returned</strong><span>The transcription service returned an empty result.</span>';
+    outputState.textContent = 'Empty result';
+    updateWordCount('');
+    return;
+  }
+
+  resultEl.className = 'result-content has-text';
+  resultEl.textContent = cleanText;
+  outputState.textContent = 'Transcript ready';
+  updateWordCount(cleanText);
+}
+
+function writeStr(view, offset, str) {
+  for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+}
+
+function floatTo16BitPCM(float32Array) {
+  const buffer = new ArrayBuffer(float32Array.length * 2);
+  const view = new DataView(buffer);
+  let offset = 0;
+  for (let i = 0; i < float32Array.length; i++, offset += 2) {
+    let s = Math.max(-1, Math.min(1, float32Array[i]));
+    s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    view.setInt16(offset, Math.round(s), true);
+  }
+  return new Uint8Array(buffer);
+}
+
+function buildWavFile(pcm16bytes, sampleRate) {
+  const buffer = new ArrayBuffer(44 + pcm16bytes.length);
+  const view = new DataView(buffer);
+
+  writeStr(view, 0, 'RIFF');
+  view.setUint32(4, 36 + pcm16bytes.length, true);
+  writeStr(view, 8, 'WAVE');
+  writeStr(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(view, 36, 'data');
+  view.setUint32(40, pcm16bytes.length, true);
+  new Uint8Array(buffer, 44).set(pcm16bytes);
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+
+function resampleLinear(input, srcRate, dstRate) {
+  if (srcRate === dstRate) return input;
+  const srcLength = input.length;
+  const dstLength = Math.round(srcLength * dstRate / srcRate);
+  const out = new Float32Array(dstLength);
+  const ratio = (srcLength - 1) / Math.max(dstLength - 1, 1);
+  for (let i = 0; i < dstLength; i++) {
+    const idx = i * ratio;
+    const left = Math.floor(idx);
+    const right = Math.min(left + 1, srcLength - 1);
+    const t = idx - left;
+    out[i] = input[left] * (1 - t) + input[right] * t;
+  }
+  return out;
+}
+
+function downmixToMono(buffer) {
+  if (buffer.numberOfChannels === 1) return buffer.getChannelData(0);
+  const len = buffer.length;
+  const out = new Float32Array(len);
+  const numCh = buffer.numberOfChannels;
+  for (let c = 0; c < numCh; c++) {
+    const ch = buffer.getChannelData(c);
+    for (let i = 0; i < len; i++) out[i] += ch[i];
+  }
+  for (let i = 0; i < len; i++) out[i] /= numCh;
+  return out;
+}
+
+async function blobToWav16kMono(blob) {
+  const arrayBuffer = await blob.arrayBuffer();
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+  let mono = downmixToMono(audioBuffer);
+  const srcRate = audioBuffer.sampleRate;
+  const dstRate = 16000;
+  if (srcRate !== dstRate) mono = resampleLinear(mono, srcRate, dstRate);
+  const pcm16 = floatTo16BitPCM(mono);
+  const wavBlob = buildWavFile(pcm16, dstRate);
+  if (typeof audioCtx.close === 'function') audioCtx.close();
+  return { wavBlob, pcmFloat32: mono, sampleRate: dstRate };
+}
+
+async function uploadWav(wavBlob, filename = 'gravacao.wav') {
+  const formData = new FormData();
+  formData.append('file', wavBlob, filename);
+  return fetch('/upload', { method: 'POST', body: formData });
+}
+
+async function startRecording() {
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(mediaStream);
+
+    mediaRecorder.ondataavailable = e => {
+      if (e.data && e.data.size > 0) audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      mediaStream.getTracks().forEach(t => t.stop());
+      setRecordingUI(false);
+
+      const rawBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      try {
+        setProcessingState('Converting recording to mono 16 kHz WAV…');
+        const { wavBlob } = await blobToWav16kMono(rawBlob);
+
+        setProcessingState('Sending audio to the transcription service…');
+        const res = await uploadWav(wavBlob, 'gravacao_16k_mono.wav');
+
+        if (!res.ok) {
+          const txt = await res.text();
+          console.error('Upload error', res.status, txt);
+          statusEl.textContent = `Server error (${res.status})`;
+          recordTitle.textContent = 'Something went wrong';
+          showTranscript('');
+          clearProcessingState();
+          return;
+        }
+
+        const json = await res.json();
+        clearProcessingState();
+        recordTitle.textContent = 'Transcription complete';
+        statusEl.textContent = 'Review the generated text or export it below.';
+        showTranscript(json.transcription || '');
+        liveBadge.classList.remove('processing');
+        liveBadge.innerHTML = '<span></span> COMPLETE';
+      } catch (err) {
+        console.error(err);
+        clearProcessingState();
+        recordTitle.textContent = 'Processing failed';
+        statusEl.textContent = 'The audio could not be processed. Check the server and try again.';
+        showTranscript('');
+      }
+    };
+
+    mediaRecorder.start();
+    setRecordingUI(true);
+  } catch (err) {
+    console.error(err);
+    stopTimer();
+    statusEl.textContent = 'Microphone access was not available.';
+    recordTitle.textContent = 'Microphone unavailable';
+    setRecordingUI(false);
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  else {
+    setRecordingUI(false);
+    statusEl.textContent = 'No active recording.';
+  }
+}
+
+recordBtn.addEventListener('click', () => recording ? stopRecording() : startRecording());
+
+document.getElementById('downloadPdf').addEventListener('click', () => {
+  const text = resultEl.textContent.trim();
+  if (!text || resultEl.classList.contains('empty-state')) return alert('No transcript available for PDF export.');
+  const doc = new jsPDF.jsPDF();
+  const lines = doc.splitTextToSize(text, 180);
+  doc.setFont('helvetica', 'bold');
+  doc.text('VozClara Transcript', 10, 14);
+  doc.setFont('helvetica', 'normal');
+  doc.text(lines, 10, 26);
+  doc.save('vozclara-transcript.pdf');
+});
+
+document.getElementById('downloadDoc').addEventListener('click', () => {
+  const text = resultEl.textContent.trim();
+  if (!text || resultEl.classList.contains('empty-state')) return alert('No transcript available for DOC export.');
+  const blob = new Blob([text], { type: 'application/msword' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'vozclara-transcript.doc';
+  link.click();
+  URL.revokeObjectURL(link.href);
+});
+
+const darkModeToggle = document.getElementById('darkModeToggle');
+const savedTheme = localStorage.getItem('vozclara-theme');
+if (savedTheme === 'light') document.body.classList.add('light');
+
+function syncThemeButton() {
+  const dark = !document.body.classList.contains('light');
+  darkModeToggle.textContent = dark ? '☼' : '☾';
+  darkModeToggle.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+}
+
+darkModeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('light');
+  localStorage.setItem('vozclara-theme', document.body.classList.contains('light') ? 'light' : 'dark');
+  syncThemeButton();
+});
+
+syncThemeButton();
+</script>
+{% endblock %}
